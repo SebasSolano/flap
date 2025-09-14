@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird con Mejoras</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 360px;
+            margin-bottom: 20px;
+        }
+        
+        #game-canvas {
+            background-color: #70c5ce;
+            border: 3px solid #2c3e50;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+        }
+        
+        #ui-container {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        #start-screen, #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #game-over {
+            display: none;
+        }
+        
+        .screen-content {
+            max-width: 300px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        
+        .stat {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            flex: 1;
+        }
+        
+        button {
+            background: linear-gradient(to bottom, #FFD700, #FFA500);
+            color: #2c3e50;
+            border: none;
+            padding: 12px 20px;
+            margin: 8px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #shop {
+            background: rgba(30, 30, 50, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            width: 360px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FFD700;
+        }
+        
+        .shop-categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .category-btn {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .shop-items {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .shop-item {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            padding: 15px;
+            border-radius: 10px;
+            transition: transform 0.3s;
+            position: relative;
+        }
+        
+        .shop-item:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(to right, #3498db, #2980b9);
+        }
+        
+        .shop-item.disabled {
+            opacity: 0.6;
+            background: linear-gradient(to right, #555, #777);
+        }
+        
+        .shop-item h3 {
+            margin-bottom: 8px;
+            color: #FFD700;
+        }
+        
+        .shop-item p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .upgrade-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .cost {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .level {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        
+        .effect {
+            color: #2ecc71;
+            font-size: 13px;
+        }
+        
+        .multiplier {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        #controls {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .skin-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+            border: 2px solid white;
+        }
+        
+        .purchase-feedback {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #2ecc71;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            animation: pulse 0.5s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-height: 850px) {
+            body {
+                padding: 10px;
+            }
+            
+            #shop {
+                width: 340px;
+                padding: 15px;
+            }
+            
+            .shop-items {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>FLAPPY BIRD PREMIUM</h1>
+        <p>¡Mejora tu pájaro y consigue la mayor puntuación!</p>
+    </header>
+    
+    <div id="game-container">
+        <canvas id="game-canvas" width="360" height="640"></canvas>
+        
+        <div id="ui-container">
+            <div>Puntaje: <span id="score">0</span></div>
+            <div>Dinero: $<span id="money">0</span></div>
+        </div>
+        
+        <div id="start-screen">
+            <div class="screen-content">
+                <h2>FLAPPY BIRD</h2>
+                <p>Haz clic o presiona ESPACIO para volar</p>
+                <p>Esquiva los tubos y consigue puntos</p>
+                <button id="start-button">Comenzar</button>
+                <div id="controls">
+                    <p>Controles: CLIC o ESPACIO para volar</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="game-over">
+            <div class="screen-content">
+                <h2>GAME OVER</h2>
+                <p>Puntaje: <span id="final-score">0</span></p>
+                <p>Dinero obtenido: $<span id="earned-money">0</span></p>
+                <div class="stats">
+                    <div class="stat">Mejor: <span id="best-score">0</span></div>
+                    <div class="stat">Total: $<span id="total-money">0</span></div>
+                </div>
+                <button id="restart-button">Reiniciar</button>
+                <button id="open-shop">Abrir Tienda</button>
+            </div>
+        </div>
+    </div>
+    
+    <button id="toggle-shop">Mostrar Tienda</button>
+    
+    <div id="shop">
+        <div class="shop-header">
+            <h2>Tienda de Mejoras</h2>
+            <button id="close-shop">Cerrar</button>
+        </div>
+        
+        <div class="shop-categories">
+            <button class="category-btn active" data-category="abilities">Habilidades</button>
+            <button class="category-btn" data-category="skins">Skins</button>
+        </div>
+        
+        <div class="shop-items">
+            <!-- Habilidades -->
+            <div class="shop-item" data-category="abilities" data-upgrade="gravity">
+                <h3>Gravedad Reducida</h3>
+                <p>El pájaro cae más lentamente</p>
+                <p class="effect">Efecto: Reduce la gravedad en un 10%</p>
+                <p class="effect">Multiplicador de skin: <span class="multiplier">x1.0</span></p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="gravity-cost">50</span></span>
+                    <span class="level">Nivel: <span id="gravity-level">1</span></span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="abilities" data-upgrade="speed">
+                <h3>Velocidad</h3>
+                <p>Aumenta la velocidad del juego</p>
+                <p class="effect">Efecto: Aumenta la velocidad en 0.5 unidades</p>
+                <p class="effect">Multiplicador de skin: <span class="multiplier">x1.0</span></p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="speed-cost">75</span></span>
+                    <span class="level">Nivel: <span id="speed-level">1</span></span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="abilities" data-upgrade="jump">
+                <h3>Salto Mejorado</h3>
+                <p>El pájaro salta más alto</p>
+                <p class="effect">Efecto: Aumenta la fuerza de salto en 0.5 unidades</p>
+                <p class="effect">Multiplicador de skin: <span class="multiplier">x1.0</span></p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="jump-cost">100</span></span>
+                    <span class="level">Nivel: <span id="jump-level">1</span></span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="abilities" data-upgrade="money">
+                <h3>Dinero Extra</h3>
+                <p>Gana más dinero por punto</p>
+                <p class="effect">Efecto: Aumenta el multiplicador de dinero en 0.2</p>
+                <p class="effect">Multiplicador de skin: <span class="multiplier">x1.0</span></p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="money-cost">150</span></span>
+                    <span class="level">Nivel: <span id="money-level">1</span></span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="abilities" data-upgrade="gap">
+                <h3>Espacio Extra</h3>
+                <p>Aumenta el espacio entre tubos</p>
+                <p class="effect">Efecto: Aumenta el espacio entre tubos en 10 píxeles</p>
+                <p class="effect">Multiplicador de skin: <span class="multiplier">x1.0</span></p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="gap-cost">200</span></span>
+                    <span class="level">Nivel: <span id="gap-level">1</span></span>
+                </div>
+            </div>
+            
+            <!-- Skins -->
+            <div class="shop-item" data-category="skins" data-upgrade="skin1">
+                <h3>Skin Básica <span class="skin-preview" style="background: #f1c40f"></span></h3>
+                <p>Skin inicial con multiplicador estándar</p>
+                <p class="effect">Efecto: Multiplicador x1.0 para todas las habilidades</p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="skin1-cost">0</span></span>
+                    <span class="level">Adquirida</span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="skins" data-upgrade="skin2">
+                <h3>Skin Plateada <span class="skin-preview" style="background: #bdc3c7"></span></h3>
+                <p>Skin plateada con multiplicador x1.2</p>
+                <p class="effect">Efecto: Multiplicador x1.2 para todas las habilidades</p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="skin2-cost">300</span></span>
+                    <span class="level">No adquirida</span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="skins" data-upgrade="skin3">
+                <h3>Skin Dorada <span class="skin-preview" style="background: #ffd700"></span></h3>
+                <p>Skin dorada con multiplicador x1.5</p>
+                <p class="effect">Efecto: Multiplicador x1.5 para todas las habilidades</p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="skin3-cost">600</span></span>
+                    <span class="level">No adquirida</span>
+                </div>
+            </div>
+            
+            <div class="shop-item" data-category="skins" data-upgrade="skin4">
+                <h3>Skin Diamante <span class="skin-preview" style="background: #00b4ff"></span></h3>
+                <p>Skin diamante con multiplicador x2.0</p>
+                <p class="effect">Efecto: Multiplicador x2.0 para todas las habilidades</p>
+                <div class="upgrade-info">
+                    <span class="cost">Coste: $<span id="skin4-cost">1000</span></span>
+                    <span class="level">No adquirida</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Elementos de audio para los efectos de sonido -->
+    <audio id="jump-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-space-coin-hit-2183.mp3"></audio>
+    <audio id="hit-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3"></audio>
+    <audio id="score-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3"></audio>
+    <audio id="ambient-sound" loop src="https://assets.mixkit.co/music/preview/mixkit-happy-times-158.mp3"></audio>
+
+    <script>
+        // Variables del juego
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Elementos de la interfaz
+        const scoreElement = document.getElementById('score');
+        const moneyElement = document.getElementById('money');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const earnedMoneyElement = document.getElementById('earned-money');
+        const bestScoreElement = document.getElementById('best-score');
+        const totalMoneyElement = document.getElementById('total-money');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const openShopButton = document.getElementById('open-shop');
+        const toggleShopButton = document.getElementById('toggle-shop');
+        const closeShopButton = document.getElementById('close-shop');
+        const shop = document.getElementById('shop');
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        const shopItems = document.querySelectorAll('.shop-item');
+        
+        // Elementos de audio
+        const jumpSound = document.getElementById('jump-sound');
+        const hitSound = document.getElementById('hit-sound');
+        const scoreSound = document.getElementById('score-sound');
+        const ambientSound = document.getElementById('ambient-sound');
+        
+        // Estado del juego
+        let game = {
+            running: false,
+            score: 0,
+            money: 0,
+            totalMoney: 0,
+            bestScore: 0,
+            gravity: 0.25,
+            speed: 2,
+            jump: 4.6,
+            moneyMultiplier: 1,
+            pipeGap: 150,
+            skinMultiplier: 1,
+            currentSkin: 'skin1',
+            upgrades: {
+                gravity: 1,
+                speed: 1,
+                jump: 1,
+                money: 1,
+                gap: 1
+            },
+            skins: {
+                skin1: { purchased: true, multiplier: 1.0, color: '#f1c40f' },
+                skin2: { purchased: false, multiplier: 1.2, color: '#bdc3c7' },
+                skin3: { purchased: false, multiplier: 1.5, color: '#ffd700' },
+                skin4: { purchased: false, multiplier: 2.0, color: '#00b4ff' }
+            },
+            costs: {
+                gravity: 50,
+                speed: 75,
+                jump: 100,
+                money: 150,
+                gap: 200,
+                skin2: 300,
+                skin3: 600,
+                skin4: 1000
+            }
+        };
+        
+        // Pájaro
+        let bird = {
+            x: 50,
+            y: canvas.height / 2,
+            width: 34,
+            height: 24,
+            velocity: 0,
+            jumpStrength: game.jump,
+            color: game.skins[game.currentSkin].color,
+            draw: function() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Pico
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(this.x + 10, this.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Ojo
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(this.x + 8, this.y - 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(this.x + 9, this.y - 2, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Ala
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.ellipse(this.x - 5, this.y + 5, 8, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            },
+            update: function() {
+                this.velocity += game.gravity;
+                this.y += this.velocity;
+                
+                // Limitar el pájaro dentro del canvas
+                if (this.y >= canvas.height - this.height / 2) {
+                    this.y = canvas.height - this.height / 2;
+                    gameOver();
+                }
+                
+                if (this.y <= 0 + this.height / 2) {
+                    this.y = 0 + this.height / 2;
+                    this.velocity = 0;
+                }
+            },
+            flap: function() {
+                this.velocity = -this.jumpStrength;
+                // Reproducir sonido de salto
+                jumpSound.currentTime = 0;
+                jumpSound.play().catch(function(e) {
+                    console.log("Error al reproducir sonido de salto: ", e);
+                });
+            }
+        };
+        
+        // Tubos
+        let pipes = [];
+        let pipeWidth = 60;
+        let pipeSpawnInterval = 1500; // ms
+        let lastPipeSpawn = 0;
+        
+        function Pipe() {
+            this.x = canvas.width;
+            this.width = pipeWidth;
+            this.gapHeight = game.pipeGap;
+            this.gapPosition = Math.random() * (canvas.height - 180) + 90;
+            this.scored = false;
+            this.topPipeHeight = this.gapPosition - this.gapHeight / 2;
+            this.bottomPipeY = this.gapPosition + this.gapHeight / 2;
+            
+            this.draw = function() {
+                ctx.fillStyle = '#2ecc71';
+                
+                // Tubo superior
+                ctx.fillRect(this.x, 0, this.width, this.topPipeHeight);
+                
+                // Tubo inferior
+                ctx.fillRect(this.x, this.bottomPipeY, this.width, canvas.height - this.bottomPipeY);
+                
+                // Bordes de los tubos
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(this.x - 2, this.topPipeHeight - 10, this.width + 4, 10);
+                ctx.fillRect(this.x - 2, this.bottomPipeY, this.width + 4, 10);
+            };
+            
+            this.update = function() {
+                this.x -= game.speed;
+                
+                // Comprobar si el pájaro ha pasado el tubo
+                if (!this.scored && this.x + this.width < bird.x) {
+                    game.score++;
+                    game.money += 5 * game.moneyMultiplier;
+                    updateUI();
+                    this.scored = true;
+                    
+                    // Reproducir sonido de puntuación
+                    scoreSound.currentTime = 0;
+                    scoreSound.play().catch(function(e) {
+                        console.log("Error al reproducir sonido de puntuación: ", e);
+                    });
+                }
+                
+                // Comprobar colisión
+                if (
+                    bird.x + bird.width / 2 > this.x && 
+                    bird.x - bird.width / 2 < this.x + this.width && 
+                    (bird.y - bird.height / 2 < this.topPipeHeight || 
+                     bird.y + bird.height / 2 > this.bottomPipeY)
+                ) {
+                    gameOver();
+                }
+            };
+        }
+        
+        // Fondo
+        function drawBackground() {
+            // Cielo
+            ctx.fillStyle = '#70c5ce';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Nubes
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(100, 80, 20, 0, Math.PI * 2);
+            ctx.arc(120, 70, 25, 0, Math.PI * 2);
+            ctx.arc(140, 85, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(250, 100, 20, 0, Math.PI * 2);
+            ctx.arc(270, 90, 25, 0, Math.PI * 2);
+            ctx.arc(290, 105, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Suelo
+            ctx.fillStyle = '#dec07a';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            
+            ctx.fillStyle = '#a67c52';
+            for (let i = 0; i < canvas.width; i += 15) {
+                ctx.fillRect(i, canvas.height - 30, 10, 5);
+            }
+        }
+        
+        // Iniciar juego
+        function startGame() {
+            game.running = true;
+            game.score = 0;
+            game.money = 0;
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            bird.jumpStrength = game.jump * game.skinMultiplier;
+            pipes = [];
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            shop.style.display = 'none';
+            updateUI();
+            
+            // Iniciar sonido ambiente
+            ambientSound.currentTime = 0;
+            ambientSound.play().catch(function(e) {
+                console.log("Error al reproducir sonido ambiente: ", e);
+            });
+            
+            gameLoop();
+        }
+        
+        // Game over
+        function gameOver() {
+            game.running = false;
+            
+            // Detener sonido ambiente
+            ambientSound.pause();
+            
+            // Reproducir sonido de choque
+            hitSound.currentTime = 0;
+            hitSound.play().catch(function(e) {
+                console.log("Error al reproducir sonido de choque: ", e);
+            });
+            
+            // Actualizar mejores puntuaciones y dinero total
+            if (game.score > game.bestScore) {
+                game.bestScore = game.score;
+            }
+            
+            game.totalMoney += game.money;
+            
+            finalScoreElement.textContent = game.score;
+            earnedMoneyElement.textContent = Math.floor(game.money);
+            bestScoreElement.textContent = game.bestScore;
+            totalMoneyElement.textContent = Math.floor(game.totalMoney);
+            
+            // Guardar en localStorage
+            saveGame();
+            
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Actualizar UI
+        function updateUI() {
+            scoreElement.textContent = game.score;
+            moneyElement.textContent = Math.floor(game.money);
+            
+            // Actualizar niveles de mejora
+            document.getElementById('gravity-level').textContent = game.upgrades.gravity;
+            document.getElementById('speed-level').textContent = game.upgrades.speed;
+            document.getElementById('jump-level').textContent = game.upgrades.jump;
+            document.getElementById('money-level').textContent = game.upgrades.money;
+            document.getElementById('gap-level').textContent = game.upgrades.gap;
+            
+            // Actualizar precios
+            document.getElementById('gravity-cost').textContent = game.costs.gravity;
+            document.getElementById('speed-cost').textContent = game.costs.speed;
+            document.getElementById('jump-cost').textContent = game.costs.jump;
+            document.getElementById('money-cost').textContent = game.costs.money;
+            document.getElementById('gap-cost').textContent = game.costs.gap;
+            document.getElementById('skin2-cost').textContent = game.costs.skin2;
+            document.getElementById('skin3-cost').textContent = game.costs.skin3;
+            document.getElementById('skin4-cost').textContent = game.costs.skin4;
+            
+            // Actualizar información de skins
+            updateShopUI();
+        }
+        
+        // Actualizar tienda
+        function updateShopUI() {
+            // Actualizar multiplicadores
+            document.querySelectorAll('.multiplier').forEach(function(el) {
+                el.textContent = 'x' + game.skinMultiplier.toFixed(1);
+            });
+            
+            // Actualizar información de skins
+            for (const skin in game.skins) {
+                const item = document.querySelector('.shop-item[data-upgrade="' + skin + '"]');
+                if (item) {
+                    const levelEl = item.querySelector('.level');
+                    
+                    if (game.skins[skin].purchased) {
+                        levelEl.textContent = skin === game.currentSkin ? 'Equipada' : 'Disponible';
+                    } else {
+                        levelEl.textContent = 'No adquirida';
+                    }
+                    
+                    // Deshabilitar items si no hay suficiente dinero
+                    const cost = game.costs[skin];
+                    if (!game.skins[skin].purchased && game.totalMoney < cost) {
+                        item.classList.add('disabled');
+                    } else {
+                        item.classList.remove('disabled');
+                    }
+                }
+            }
+            
+            // Deshabilitar mejoras si no hay suficiente dinero
+            for (const upgrade in game.upgrades) {
+                const item = document.querySelector('.shop-item[data-upgrade="' + upgrade + '"]');
+                const cost = game.costs[upgrade];
+                
+                if (item && game.totalMoney < cost) {
+                    item.classList.add('disabled');
+                } else if (item) {
+                    item.classList.remove('disabled');
+                }
+            }
+            
+            // Actualizar dinero total
+            totalMoneyElement.textContent = Math.floor(game.totalMoney);
+            bestScoreElement.textContent = game.bestScore;
+        }
+        
+        // Bucle principal del juego
+        function gameLoop(timestamp) {
+            if (!game.running) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawBackground();
+            
+            // Generar nuevos tubos
+            if (timestamp - lastPipeSpawn > pipeSpawnInterval) {
+                pipes.push(new Pipe());
+                lastPipeSpawn = timestamp;
+                
+                // Aumentar dificultad gradualmente
+                if (pipes.length % 5 === 0) {
+                    game.speed += 0.1;
+                }
+            }
+            
+            // Actualizar y dibujar tubos
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].update();
+                pipes[i].draw();
+                
+                // Eliminar tubos que salieron de la pantalla
+                if (pipes[i].x + pipes[i].width < 0) {
+                    pipes.splice(i, 1);
+                }
+            }
+            
+            // Actualizar y dibujar pájaro
+            bird.update();
+            bird.draw();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Comprar mejoras
+        function buyUpgrade(upgradeType) {
+            // Comprobar si es una skin
+            if (upgradeType.startsWith('skin')) {
+                if (game.skins[upgradeType].purchased) {
+                    // Equipar la skin
+                    game.currentSkin = upgradeType;
+                    game.skinMultiplier = game.skins[upgradeType].multiplier;
+                    bird.color = game.skins[upgradeType].color; // Actualizar color del pájaro
+                    applyUpgrades(); // Reaplicar mejoras con el nuevo multiplicador
+                    updateShopUI();
+                    saveGame();
+                    
+                    // Feedback visual
+                    const item = document.querySelector('.shop-item[data-upgrade="' + upgradeType + '"]');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'purchase-feedback';
+                    feedback.textContent = '✓';
+                    item.appendChild(feedback);
+                    
+                    setTimeout(function() {
+                        feedback.remove();
+                    }, 1000);
+                } else {
+                    // Comprar la skin
+                    const cost = game.costs[upgradeType];
+                    if (game.totalMoney >= cost) {
+                        game.totalMoney -= cost;
+                        game.skins[upgradeType].purchased = true;
+                        game.currentSkin = upgradeType;
+                        game.skinMultiplier = game.skins[upgradeType].multiplier;
+                        bird.color = game.skins[upgradeType].color; // Actualizar color del pájaro
+                        applyUpgrades(); // Reaplicar mejoras con el nuevo multiplicador
+                        updateShopUI();
+                        saveGame();
+                        
+                        // Feedback visual
+                        const item = document.querySelector('.shop-item[data-upgrade="' + upgradeType + '"]');
+                        const feedback = document.createElement('div');
+                        feedback.className = 'purchase-feedback';
+                        feedback.textContent = '✓';
+                        item.appendChild(feedback);
+                        
+                        setTimeout(function() {
+                            feedback.remove();
+                        }, 1000);
+                    } else {
+                        alert("¡No tienes suficiente dinero!");
+                    }
+                }
+                return;
+            }
+            
+            // Comprar mejora normal
+            const cost = game.costs[upgradeType];
+            
+            if (game.totalMoney >= cost) {
+                game.totalMoney -= cost;
+                game.upgrades[upgradeType]++;
+                
+                // Aplicar mejora
+                applyUpgrade(upgradeType);
+                
+                // Aumentar costo para próxima mejora
+                game.costs[upgradeType] = Math.floor(cost * 1.5);
+                
+                // Actualizar UI
+                updateUI();
+                
+                // Guardar en localStorage
+                saveGame();
+                
+                // Feedback visual
+                const item = document.querySelector('.shop-item[data-upgrade="' + upgradeType + '"]');
+                const feedback = document.createElement('div');
+                feedback.className = 'purchase-feedback';
+                feedback.textContent = '✓';
+                item.appendChild(feedback);
+                
+                setTimeout(function() {
+                    feedback.remove();
+                }, 1000);
+            } else {
+                alert("¡No tienes suficiente dinero!");
+            }
+        }
+        
+        // Aplicar mejora específica
+        function applyUpgrade(upgradeType) {
+            switch(upgradeType) {
+                case 'gravity':
+                    game.gravity = 0.25 * Math.pow(0.9, game.upgrades.gravity - 1) * game.skinMultiplier;
+                    break;
+                case 'speed':
+                    game.speed = (2 + 0.5 * (game.upgrades.speed - 1)) * game.skinMultiplier;
+                    break;
+                case 'jump':
+                    bird.jumpStrength = (4.6 + 0.5 * (game.upgrades.jump - 1)) * game.skinMultiplier;
+                    break;
+                case 'money':
+                    game.moneyMultiplier = 1 + 0.2 * (game.upgrades.money - 1) * game.skinMultiplier;
+                    break;
+                case 'gap':
+                    game.pipeGap = 150 + 10 * (game.upgrades.gap - 1) * game.skinMultiplier;
+                    break;
+            }
+        }
+        
+        // Aplicar todas las mejoras
+        function applyUpgrades() {
+            for (const upgrade in game.upgrades) {
+                applyUpgrade(upgrade);
+            }
+        }
+        
+        // Guardar juego
+        function saveGame() {
+            const saveData = {
+                totalMoney: game.totalMoney,
+                bestScore: game.bestScore,
+                upgrades: game.upgrades,
+                costs: game.costs,
+                skins: game.skins,
+                currentSkin: game.currentSkin,
+                skinMultiplier: game.skinMultiplier
+            };
+            
+            localStorage.setItem('flappyBirdSave', JSON.stringify(saveData));
+        }
+        
+        // Cargar juego
+        function loadGame() {
+            const saveData = JSON.parse(localStorage.getItem('flappyBirdSave'));
+            
+            if (saveData) {
+                game.totalMoney = saveData.totalMoney || 0;
+                game.bestScore = saveData.bestScore || 0;
+                game.upgrades = saveData.upgrades || game.upgrades;
+                game.costs = saveData.costs || game.costs;
+                game.skins = saveData.skins || game.skins;
+                game.currentSkin = saveData.currentSkin || 'skin1';
+                game.skinMultiplier = saveData.skinMultiplier || 1;
+                
+                // Aplicar mejoras cargadas
+                applyUpgrades();
+                
+                // Actualizar color del pájaro según la skin actual
+                bird.color = game.skins[game.currentSkin].color;
+            }
+            
+            updateUI();
+        }
+        
+        // Filtrar items de la tienda por categoría
+        function filterShop(category) {
+            shopItems.forEach(function(item) {
+                if (item.getAttribute('data-category') === category) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Actualizar botones de categoría
+            categoryButtons.forEach(function(btn) {
+                if (btn.getAttribute('data-category') === category) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        // Event Listeners
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        
+        toggleShopButton.addEventListener('click', function() {
+            shop.style.display = 'block';
+            filterShop('abilities');
+        });
+        
+        openShopButton.addEventListener('click', function() {
+            shop.style.display = 'block';
+            filterShop('abilities');
+        });
+        
+        closeShopButton.addEventListener('click', function() {
+            shop.style.display = 'none';
+        });
+        
+        // Cambiar categorías en la tienda
+        categoryButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                filterShop(category);
+            });
+        });
+        
+        // Comprar mejoras
+        document.querySelectorAll('.shop-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                if (this.classList.contains('disabled')) return;
+                
+                const upgradeType = this.getAttribute('data-upgrade');
+                buyUpgrade(upgradeType);
+            });
+        });
+        
+        // Controles
+        canvas.addEventListener('click', function() {
+            if (game.running) {
+                bird.flap();
+            }
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && game.running) {
+                bird.flap();
+                e.preventDefault();
+            }
+        });
+        
+        // Inicializar juego
+        loadGame();
+        totalMoneyElement.textContent = Math.floor(game.totalMoney);
+        bestScoreElement.textContent = game.bestScore;
+    </script>
+</body>
+</html>
